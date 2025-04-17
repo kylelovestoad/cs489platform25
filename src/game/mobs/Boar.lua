@@ -21,6 +21,10 @@ local hitAnim = Anim8.newAnimation(hitGrid('1-4',1),0.2)
 
 local Boar = Class{__includes = Enemy}
 function Boar:init(type) Enemy:init() -- superclass const.
+
+    -- local imageData = love.image.newImageData(1, 1)
+    -- imageData:setPixel(0, 0, 1, 1, 1, 1) -- white pixel with full alpha
+
     self.name = "boar"
     self.type = type
     if type == nil then self.type = "brown" end
@@ -48,6 +52,15 @@ function Boar:init(type) Enemy:init() -- superclass const.
     self:setHitbox("walk",10,10,34,22)
     --self:setHurtbox("hit",6,2,34,30)
 
+    local particleImage = love.graphics.newImage("graphics/particles/34.png")
+    self.poof = love.graphics.newParticleSystem(particleImage, 50)
+    self.poof:setParticleLifetime(0.5, 1)
+    self.poof:setLinearAcceleration(-100, -100, 100, 100)
+    self.poof:setEmissionRate(30)
+    self.poof:setSizes(0.1, 0.05)
+    self.poof:setColors(1, 1, 1, 1, 1, 1, 1, 0)
+
+    self.deathParticlesNotPlayed = true
 
     Timer.every(5,function() self:changeState() end)
 end
@@ -59,13 +72,51 @@ function Boar:changeState()
         self.state = "idle"
     end
 end
+
+function Boar:draw()
+
+    if self.died then 
+        love.graphics.draw(self.poof, self.x + 20, self.y + 20)
+        return 
+    end
+
+    self.animations[self.state]:draw(self.sprites[self.state],
+        math.floor(self.x), math.floor(self.y))
     
+    if debugFlag then
+        local w,h = self:getDimensions()
+        love.graphics.rectangle("line",self.x,self.y,w,h) -- sprite
+    
+        if self:getHurtbox() then
+            love.graphics.setColor(0,0,1) -- blue
+            self:getHurtbox():draw()
+        end
+    
+        if self:getHitbox() then
+            love.graphics.setColor(1,0,0) -- red
+            self:getHitbox():draw()
+        end
+        love.graphics.setColor(1,1,1) 
+    end
+end
+
 
 function Boar:update(dt, stage)
+
+    if self.deathParticlesNotPlayed then
+        self.poof:update(dt)
+    end
+
+    if self.died then return end
+
+    -- Boar should fall even when idle
+    if not stage:bottomCollision(self,1,0) then -- not on solid ground
+        self.y = self.y + 32*dt -- fall 
+    end
+
     if self.state == "walk" then
-        if not stage:bottomCollision(self,1,0) then -- not on solid ground
-            self.y = self.y + 32*dt -- fall 
-        elseif self.dir == "l" then -- on ground and walking left
+
+        if self.dir == "l" then -- on ground and walking left
             if stage:leftCollision(self,0) then -- collision, change dir
                 self:changeDirection()
             else -- no collision, keep walking left
@@ -92,7 +143,9 @@ function Boar:hit(damage, direction)
     Sounds["mob_hurt"]:play()
 
     if self.hp <= 0 then
+        self.deathParticlesNotPlayed = true
         self.died = true
+        Timer.after(2, function() self.deathParticlesNotPlayed = false end)
     end
 
     Timer.after(1, function() self:endHit(direction) end)

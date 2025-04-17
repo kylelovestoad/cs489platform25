@@ -37,7 +37,6 @@ function StageManager:setStage(index)
     end
 
     self.index = index
-    print(self.index)
     local creationFunc = self.createStage[self.index]
     if creationFunc then
         self.current = creationFunc()

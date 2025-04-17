@@ -40,6 +40,7 @@ function Enemy:update(dt)
 end
 
 function Enemy:draw()
+
     self.animations[self.state]:draw(self.sprites[self.state],
         math.floor(self.x), math.floor(self.y))
     

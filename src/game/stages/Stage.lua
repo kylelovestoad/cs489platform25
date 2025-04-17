@@ -26,7 +26,7 @@ function Stage:update(dt)
 
     for k=#self.mobs, 1, -1 do 
         self.mobs[k]:update(dt, self)
-        if self.mobs[k].died then
+        if self.mobs[k].died and not self.mobs[k].deathParticlesNotPlayed then
             table.remove(self.mobs, k)
         end
     end
@@ -190,10 +190,12 @@ function Stage:checkMobsHboxCollision(anHbox, boxtype)
     if anHbox == nil then return nil end
 
     for k=1, #self.mobs do
-        local mobHbox = self.mobs[k]:getHbox(boxtype)
-        if mobHbox ~= nil and mobHbox:collision(anHbox) then
-            return self.mobs[k]
-        end -- end if
+        if not self.mobs[k].died then
+            local mobHbox = self.mobs[k]:getHbox(boxtype)
+            if mobHbox ~= nil and mobHbox:collision(anHbox) then
+                return self.mobs[k]
+            end -- end if
+        end
     end -- end for mobs
 
     return nil

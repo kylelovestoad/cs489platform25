@@ -5,6 +5,8 @@ local Player = require "src.game.Player"
 local Camera = require "libs.sxcamera"
 local HUD = require "src.game.HUDimproved"
 local Timer = require "libs.hump.timer"
+local Tween = require "libs.tween"
+local TextBox = require "src.game.TextBox"
 
 -- Load is executed only once; used to setup initial resource for your game
 function love.load()
@@ -24,7 +26,15 @@ function love.load()
     --stagemanager:setStage(1)
 
     titleFont = love.graphics.newFont("fonts/Kaph-Regular.ttf",26)
+    statsFont = love.graphics.newFont(16)
+    damageFont = love.graphics.newFont(8)
     stagemanager:setStage(0)
+
+    stageTransitionTimer = nil
+
+    stageStatsTextBox = nil
+
+    stageStatsTween = nil
 
 end
 
@@ -71,7 +81,14 @@ function love.update(dt)
         player:update(dt, stagemanager:currentStage())
         if (player.gems >= 3) then
             player.gems = 0
-            stagemanager:nextStage()
+            stageStatsTextBox = TextBox("Current Score "..player.score, statsFont,0,gameHeight,gameWidth,"center")
+            stageStatsTween = Tween.new(1, stageStatsTextBox, {y = 110}, Tween.easing.outBounce)
+            gameState = "stage_complete"
+
+            stageTransitionTimer = Timer.after(3, function() 
+                gameState = "play" 
+                stagemanager:nextStage()
+            end)
         end
 
         hud:update(dt)
@@ -84,8 +101,9 @@ function love.update(dt)
         -- TODO For later
     elseif gameState == "over" then
         -- TODO For later
-    elseif gameState == "stage_complete" then
-        
+    elseif gameState == "stage_complete" then 
+        stageStatsTween:update(dt)
+        Timer.update(dt)
     end
 end
 
@@ -100,6 +118,8 @@ function love.draw()
         drawStartState()
     elseif gameState == "over" then
         drawGameOverState()
+    elseif gameState == "stage_complete" then 
+        drawStageComplete()
     else --Error, should not happen
         love.graphics.setColor(1,1,0) -- Yellow
         love.graphics.printf("Error", 0,20,gameWidth,"center")
@@ -146,4 +166,15 @@ function drawGameOverState()
     love.graphics.printf("Total Score "..player.score,0,110,gameWidth,"center")
 
     love.graphics.printf("Press any key for Start Screen", 0,150,gameWidth,"center")
+end
+
+function drawStageComplete()
+    love.graphics.setColor(0.3,0.3,0.3)
+    stagemanager:currentStage():drawBg()
+    camera:attach()
+    stagemanager:currentStage():draw()
+    camera:detach()
+    love.graphics.setColor(0,1,0,1)
+    love.graphics.printf("Stage Complete", titleFont,0,80,gameWidth,"center")
+    stageStatsTextBox:draw()
 end

@@ -3,6 +3,7 @@ local Anim8 = require "libs.anim8"
 local Tween = require "libs.tween"
 local Hbox = require "src.game.Hbox"
 local Sounds = require "src.game.Sounds"
+local TextBox= require "src.game.TextBox"
 
 local idleSprite = love.graphics.newImage(
     "graphics/char/Idle-Sheet.png")
@@ -60,6 +61,8 @@ function Player:init(x,y)
     self.coins = 0
     self.gems = 0
     self.score = 0
+
+    self.damages = {}
 end
 
 function Player:nextStage(stage)
@@ -120,6 +123,7 @@ function Player:createAnimations() -- fill up the animations & sprites
 end
 
 function Player:update(dt, stage)
+
     -- movement logic first
     if love.keyboard.isDown("d","right") then
         self:setDirection("r")
@@ -165,10 +169,35 @@ function Player:update(dt, stage)
     if self.state == "attack1" or self.state == "attack2" then
         local mob = stage:checkMobsHboxCollision(self:getHitbox())
         if mob ~= nil then
-            mob:hit(10, self.dir)
+            local damage = 10
+
+            -- I did it this way so it would easily work with any new enemies as well
+            -- Would probably be better to put this feature in the Enemy superclass 
+            if not mob.invincible then
+                local damageText = TextBox(damage, damageFont, mob.x + 20, mob.y, 20,"center")
+
+                table.insert(self.damages, {
+                    damageText = damageText, 
+                    tween = Tween.new(0.5, damageText, {y = mob.y - 30}, Tween.easing.outCirc)
+                })
+            end
+
+            mob:hit(damage, self.dir)
             if mob.died then 
                 self.score = self.score + mob.score 
+                mob.poof:setPosition(self.x, self.y)
+                mob.poof:emit(30)
+                mob.poof:stop()
             end
+        end
+    end
+
+    -- Go through damage numbers
+    for index, damage in ipairs(self.damages) do
+        -- Continue tween for damage number
+        if damage.tween:update(dt) then
+            -- Delete damage number when tween is finished
+            table.remove(self.damages, index)
         end
     end
 
@@ -213,6 +242,11 @@ function Player:handleObjectCollision(obj)
 end
 
 function Player:draw()
+
+    for _, damage in ipairs(self.damages) do
+        damage.damageText:draw()
+    end
+
     self.animations[self.state]:draw(self.sprites[self.state],
         math.floor(self.x), math.floor(self.y) )
 
