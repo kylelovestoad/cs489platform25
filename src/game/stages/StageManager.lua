@@ -37,7 +37,15 @@ function StageManager:setStage(index)
     end
 
     self.index = index
-    self.current = self.createStage[self.index]() -- calls createS()
+    print(self.index)
+    local creationFunc = self.createStage[self.index]
+    if creationFunc then
+        self.current = creationFunc()
+    else 
+        -- Fallback stage
+        -- Stage zero could totally set up some kind of horror game, its ominous with the way the music cuts out
+        self.current = self.createStage[0]() 
+    end
     -- self.current now has an instance of the stage
 
     self.player.x = self.current.initialPlayerX

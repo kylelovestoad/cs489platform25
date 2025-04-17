@@ -234,18 +234,18 @@ function Player:draw()
 end
 
 function Player:keypressed(key)
-    if key == "space" and self.state ~= "jump" then
+    if key == "c" and self.state ~= "jump" then
         self.state = "jump"
-        self.speedY = -64 -- jumping speed
+        self.speedY = -150 -- jumping speed
         self.y = self.y -1
         self.animations["jump"]:gotoFrame(1)
         Sounds["jump"]:play()
-    elseif key=="f" and self.state ~="jump" 
+    elseif key=="x" and self.state ~="jump" 
             and self.state~="attack1" and self.state~="attack2" then
         self.state = "attack1"
         self.animations["attack1"]:gotoFrame(1)
         Sounds["attack1"]:play()
-    elseif key=="f" and self.state == "attack1" then
+    elseif key=="x" and self.state == "attack1" then
         self.state = "attack2"
         self.animations["attack2"]:gotoFrame(1)
         Sounds["attack2"]:play()
@@ -273,7 +273,7 @@ end
 function Player:jump(dt, stage)
     if self.y < stage:getHeight() then
         self.y = self.y + self.speedY*dt
-        self.speedY = self.speedY +64*dt -- gravity
+        self.speedY = self.speedY +256*dt -- gravity
     else -- fell to its d**
         self:died(stage)
     end

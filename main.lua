@@ -4,6 +4,7 @@ local Sounds = require "src.game.Sounds"
 local Player = require "src.game.Player"
 local Camera = require "libs.sxcamera"
 local HUD = require "src.game.HUDimproved"
+local Timer = require "libs.hump.timer"
 
 -- Load is executed only once; used to setup initial resource for your game
 function love.load()
@@ -68,6 +69,11 @@ function love.update(dt)
     if gameState == "play" then
         stagemanager:currentStage():update(dt)
         player:update(dt, stagemanager:currentStage())
+        if (player.gems >= 3) then
+            player.gems = 0
+            stagemanager:nextStage()
+        end
+
         hud:update(dt)
 
         camera:update(dt)
@@ -75,9 +81,11 @@ function love.update(dt)
             math.floor(player.x+48), math.floor(player.y))
 
     elseif gameState == "start" then
-
+        -- TODO For later
     elseif gameState == "over" then
-
+        -- TODO For later
+    elseif gameState == "stage_complete" then
+        
     end
 end
 
